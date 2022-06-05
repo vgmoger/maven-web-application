@@ -1,0 +1,37 @@
+node{
+
+def mavenhome = tool name: "maven3.8.5"
+ 
+     //checkout stage 
+     stage('checkout'){
+ 
+         git branch: 'development', credentialsId: '258a84e9-a463-4e08-a7eb-cc478ae25eac', 
+         url: 'https://github.com/vgmoger/maven-web-application.git'
+        }
+ 
+     //build stage
+     stage('build'){
+         sh "$mavenhome/bin/mvn clean package" 
+        }
+		
+     //sonarqube report generation
+	 stage('report'){
+	     
+		 sh "$mavenhome/bin/mvn sonar:sonar"    
+	     }
+
+     //upload artifact into artifactory report
+	 stage('artifactory repo'){
+	     
+		 sh "$mavenhome/bin/mvn deploy"      
+		 }
+		 
+		 
+	  //deploy to tomacat
+	  stage('deploy'){
+	  
+	      sshagent(['758beaea-1771-46f8-8a1a-9df58392872f']) {
+          sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@43.204.145.5:/opt/apache-tomcat-9.0.63/webapps"
+          }
+	  }
+}//Node closing
